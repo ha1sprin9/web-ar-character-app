@@ -4,6 +4,7 @@
 
 ![Demo](https://img.shields.io/badge/Status-Demo-brightgreen)
 ![License](https://img.shields.io/badge/License-MIT-blue)
+[![Deploy to GitHub Pages](https://github.com/ha1sprin9/web-ar-character-app/actions/workflows/deploy.yml/badge.svg)](https://github.com/ha1sprin9/web-ar-character-app/actions/workflows/deploy.yml)
 
 ## 🌟 Features
 
@@ -15,7 +16,8 @@
 
 ## 🚀 Demo
 
-GitHub Pagesでデモを公開予定
+[**ここをクリックしてデモを開く**](https://ha1sprin9.github.io/web-ar-character-app/)
+(スマホでアクセスしてください)
 
 ## 🛠️ Tech Stack
 
