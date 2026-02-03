@@ -1,87 +1,108 @@
 // Scene Manager - Three.jsシーンのセットアップと管理
 import * as THREE from 'three';
+import { ARButton } from 'three/addons/webxr/ARButton.js';
 
 export class SceneManager {
-    constructor(canvas) {
-        this.canvas = canvas;
+    constructor(container) {
+        this.container = container;
         this.scene = null;
         this.camera = null;
         this.renderer = null;
         this.characters = [];
+        this.reticle = null;
+        this.hitTestSource = null;
+        this.hitTestSourceRequested = false;
 
         this.init();
     }
 
     init() {
-        // シーンの作成
         this.scene = new THREE.Scene();
 
-        // カメラの設定
         this.camera = new THREE.PerspectiveCamera(
-            75,
+            70,
             window.innerWidth / window.innerHeight,
-            0.1,
-            1000
+            0.01,
+            20
         );
-        this.camera.position.z = 5;
 
-        // レンダラーの設定
+        // レンダラー設定
         this.renderer = new THREE.WebGLRenderer({
-            canvas: this.canvas,
-            alpha: true,
-            antialias: true
+            antialias: true,
+            alpha: true
         });
-        this.renderer.setSize(window.innerWidth, window.innerHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setSize(window.innerWidth, window.innerHeight);
+        this.renderer.xr.enabled = true; // WebXR有効化
+
+        // 既存のキャンバスがあれば置換、なければ追加
+        const existingCanvas = this.container.querySelector('canvas');
+        if (existingCanvas) {
+            existingCanvas.replaceWith(this.renderer.domElement);
+        } else {
+            this.container.appendChild(this.renderer.domElement);
+        }
+
+        // ARボタン追加
+        // domOverlay: UI要素（#ui-controlsなど）をARモードでも表示させるための設定
+        const arButton = ARButton.createButton(this.renderer, {
+            requiredFeatures: ['hit-test'],
+            optionalFeatures: ['dom-overlay'],
+            domOverlay: { root: document.body }
+        });
+        document.body.appendChild(arButton);
 
         // ライティング
         this.setupLighting();
 
-        // リサイズハンドラ
+        // レチクル(平面検出マーカー)作成
+        this.createReticle();
+
+        // リサイズ
         window.addEventListener('resize', () => this.onResize());
 
-        // アニメーションループ開始
-        this.animate();
+        // アニメーションループ (WebXRではrenderer.setAnimationLoopを使用)
+        this.renderer.setAnimationLoop((timestamp, frame) => this.render(timestamp, frame));
     }
 
     setupLighting() {
-        // 環境光
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
-        this.scene.add(ambientLight);
+        const hemisphereLight = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+        hemisphereLight.position.set(0.5, 1, 0.25);
+        this.scene.add(hemisphereLight);
 
-        // ディレクショナルライト
         const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(5, 10, 7.5);
+        directionalLight.position.set(0, 10, 0);
         this.scene.add(directionalLight);
-
-        // ポイントライト(アクセント)
-        const pointLight = new THREE.PointLight(0x8b5cf6, 0.5);
-        pointLight.position.set(-5, 5, 5);
-        this.scene.add(pointLight);
     }
 
+    createReticle() {
+        const geometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
+        const material = new THREE.MeshBasicMaterial();
+        this.reticle = new THREE.Mesh(geometry, material);
+        this.reticle.matrixAutoUpdate = false;
+        this.reticle.visible = false;
+        this.scene.add(this.reticle);
+    }
+
+    // キャラクター追加
     addCharacter(sprite) {
-        this.characters.push(sprite);
-        this.scene.add(sprite);
-    }
+        if (this.reticle.visible) {
+            // レチクルの位置に配置
+            sprite.position.setFromMatrixPosition(this.reticle.matrix);
 
-    removeCharacter(sprite) {
-        const index = this.characters.indexOf(sprite);
-        if (index > -1) {
-            this.characters.splice(index, 1);
-            this.scene.remove(sprite);
+            // ビルボードなので回転制御はsprite自体がカメラを向く
+            // ただしY軸回転のみに制限したい場合などは別途対応が必要
+
+            this.characters.push(sprite);
+            this.scene.add(sprite);
+            return true;
         }
+        return false;
     }
 
     clearAllCharacters() {
-        this.characters.forEach(sprite => {
-            this.scene.remove(sprite);
-        });
+        this.characters.forEach(sprite => this.scene.remove(sprite));
         this.characters = [];
-    }
-
-    getCharacters() {
-        return this.characters;
     }
 
     onResize() {
@@ -90,34 +111,46 @@ export class SceneManager {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
     }
 
-    animate() {
-        requestAnimationFrame(() => this.animate());
+    render(timestamp, frame) {
+        if (frame) {
+            const referenceSpace = this.renderer.xr.getReferenceSpace();
+            const session = this.renderer.xr.getSession();
 
-        // キャラクターのアニメーション(ゆっくり回転)
-        this.characters.forEach(sprite => {
-            if (sprite.userData.autoRotate) {
-                sprite.rotation.y += 0.005;
+            if (this.hitTestSourceRequested === false) {
+                session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                    session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                        this.hitTestSource = source;
+                    });
+                });
+
+                session.addEventListener('end', () => {
+                    this.hitTestSourceRequested = false;
+                    this.hitTestSource = null;
+                });
+
+                this.hitTestSourceRequested = true;
             }
-        });
+
+            if (this.hitTestSource) {
+                const hitTestResults = frame.getHitTestResults(this.hitTestSource);
+
+                if (hitTestResults.length > 0) {
+                    const hit = hitTestResults[0];
+                    // 'local' spaceではなくhitTestの結果のspaceを使用
+                    // 通常 ARButtonで 'local-floor' か 'viewer' が設定される
+                    // ここでは getReferenceSpace() で取得した space を使用
+
+                    // 注意: getPoseの引数は baseSpace です
+                    const pose = hit.getPose(referenceSpace);
+
+                    this.reticle.visible = true;
+                    this.reticle.matrix.fromArray(pose.transform.matrix);
+                } else {
+                    this.reticle.visible = false;
+                }
+            }
+        }
 
         this.renderer.render(this.scene, this.camera);
-    }
-
-    // レイキャスト用
-    getIntersects(x, y) {
-        const mouse = new THREE.Vector2(
-            (x / window.innerWidth) * 2 - 1,
-            -(y / window.innerHeight) * 2 + 1
-        );
-
-        const raycaster = new THREE.Raycaster();
-        raycaster.setFromCamera(mouse, this.camera);
-
-        // 仮想平面との交差判定
-        const plane = new THREE.Plane(new THREE.Vector3(0, 0, 1), -3);
-        const intersectPoint = new THREE.Vector3();
-        raycaster.ray.intersectPlane(plane, intersectPoint);
-
-        return intersectPoint;
     }
 }

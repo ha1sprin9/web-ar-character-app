@@ -2,16 +2,13 @@
 
 import { SceneManager } from './scene-manager.js';
 import { ImageLoader } from './image-loader.js';
-import { ARManager } from './ar-manager.js';
 import { UIController } from './ui-controller.js';
 
 class ARCharacterApp {
     constructor() {
         this.sceneManager = null;
         this.imageLoader = null;
-        this.arManager = null;
         this.uiController = null;
-        this.currentSprite = null;
         this.placedSprites = [];
 
         this.init();
@@ -22,21 +19,14 @@ class ARCharacterApp {
             // UI Controller初期化
             this.uiController = new UIController();
 
-            // Canvas取得
-            const canvas = document.getElementById('ar-canvas');
-            const video = document.getElementById('camera-video');
+            // コンテナ取得
+            const container = document.getElementById('ar-container');
 
-            // Scene Manager初期化
-            this.sceneManager = new SceneManager(canvas);
+            // Scene Manager初期化 (WebXR対応)
+            this.sceneManager = new SceneManager(container);
 
             // Image Loader初期化
             this.imageLoader = new ImageLoader();
-
-            // AR Manager初期化
-            this.arManager = new ARManager(video);
-
-            // カメラ起動
-            await this.arManager.startCamera();
 
             // イベントリスナー設定
             this.setupEventListeners();
@@ -46,6 +36,8 @@ class ARCharacterApp {
                 this.uiController.hideLoading();
             }, 1000);
 
+            console.log('AR App Initialized with WebXR');
+
         } catch (error) {
             console.error('Initialization error:', error);
             this.uiController.showError(error.message);
@@ -54,86 +46,55 @@ class ARCharacterApp {
 
     setupEventListeners() {
         // 配置ボタン
-        this.uiController.onPlaceClick(() => this.placeCharacterAtCenter());
+        this.uiController.onPlaceClick(() => this.placeCharacter());
 
         // クリアボタン
         this.uiController.onClearClick(() => this.clearAllCharacters());
 
-        // キャンバスクリック(タップ)
-        const canvas = document.getElementById('ar-canvas');
-        canvas.addEventListener('click', (e) => this.onCanvasClick(e));
+        // WebXRでは、画面タップ(セッション内入力)は 'select' イベントとして処理するのが一般的だが、
+        // dom-overlayを使っているため、HTML要素へのクリックイベントも取れる。
+        // ここでは、ar-containerへのクリック/タッチで配置を実行するものとする。
 
-        // タッチイベント(モバイル対応)
-        canvas.addEventListener('touchend', (e) => {
-            e.preventDefault();
-            const touch = e.changedTouches[0];
-            this.onCanvasClick({
-                clientX: touch.clientX,
-                clientY: touch.clientY
-            });
+        const container = document.getElementById('ar-container');
+
+        // タッチ終了時に配置を試みる
+        container.addEventListener('click', () => {
+            // UI操作との重複を防ぐため、少し制御が必要かもしれないが、
+            // dom-overlay設定によりボタン類は優先されるはず。
+            this.placeCharacter();
         });
     }
 
-    async onCanvasClick(event) {
+    async placeCharacter() {
         try {
-            const character = this.uiController.getSelectedCharacter();
+            const characterName = this.uiController.getSelectedCharacter();
             const rotation = this.uiController.getRotation();
             const scale = this.uiController.getScale();
 
-            // 交差点を取得
-            const intersect = this.sceneManager.getIntersects(
-                event.clientX,
-                event.clientY
-            );
+            // キャラクター画像のパス
+            const imagePath = `assets/characters/${characterName}.png`;
 
-            if (intersect) {
-                await this.placeCharacter(intersect, character, rotation, scale);
+            // スプライト作成
+            const sprite = await this.imageLoader.createCharacterSprite(imagePath, scale);
+
+            // 回転設定(Y軸)
+            sprite.material.rotation = (rotation * Math.PI) / 180;
+
+            // シーンに追加 (レチクルが表示されていれば配置成功)
+            const success = this.sceneManager.addCharacter(sprite);
+
+            if (success) {
+                this.placedSprites.push(sprite);
+                console.log('Character placed:', characterName);
+            } else {
+                console.log('Cannot place character: Reticle not visible');
+                // ユーザーにフィードバックした方が親切かも
             }
+
         } catch (error) {
             console.error('Failed to place character:', error);
             this.uiController.showError('キャラクターの配置に失敗しました');
         }
-    }
-
-    async placeCharacterAtCenter() {
-        try {
-            const character = this.uiController.getSelectedCharacter();
-            const rotation = this.uiController.getRotation();
-            const scale = this.uiController.getScale();
-
-            // 画面中央に配置
-            const centerX = window.innerWidth / 2;
-            const centerY = window.innerHeight / 2;
-
-            const intersect = this.sceneManager.getIntersects(centerX, centerY);
-
-            if (intersect) {
-                await this.placeCharacter(intersect, character, rotation, scale);
-            }
-        } catch (error) {
-            console.error('Failed to place character at center:', error);
-            this.uiController.showError('キャラクターの配置に失敗しました');
-        }
-    }
-
-    async placeCharacter(position, characterName, rotation, scale) {
-        // キャラクター画像のパス
-        const imagePath = `assets/characters/${characterName}.png`;
-
-        // スプライト作成
-        const sprite = await this.imageLoader.createCharacterSprite(imagePath, scale);
-
-        // 位置設定
-        sprite.position.copy(position);
-
-        // 回転設定(Y軸)
-        sprite.material.rotation = (rotation * Math.PI) / 180;
-
-        // シーンに追加
-        this.sceneManager.addCharacter(sprite);
-        this.placedSprites.push(sprite);
-
-        console.log('Character placed:', characterName, 'at', position);
     }
 
     clearAllCharacters() {

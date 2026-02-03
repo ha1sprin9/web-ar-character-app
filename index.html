@@ -8,11 +8,11 @@
     <title>Web AR Character Display</title>
     <link rel="stylesheet" href="style.css">
 
-    <!-- Import Map -->
     <script type="importmap">
         {
             "imports": {
-                "three": "https://unpkg.com/three@0.152.0/build/three.module.js"
+                "three": "https://unpkg.com/three@0.152.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.152.0/examples/jsm/"
             }
         }
     </script>
@@ -28,10 +28,7 @@
     </div>
 
     <!-- Main AR View -->
-    <div id="ar-container" class="ar-container">
-        <video id="camera-video" autoplay playsinline></video>
-        <canvas id="ar-canvas"></canvas>
-    </div>
+    <div id="ar-container" class="ar-container"></div>
 
     <!-- UI Controls -->
     <div id="ui-controls" class="ui-controls">
