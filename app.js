@@ -1,8 +1,8 @@
 // Main Application - すべてのモジュールを統合
 
-import { SceneManager } from './scene-manager.js';
-import { ImageLoader } from './image-loader.js';
-import { UIController } from './ui-controller.js';
+import { SceneManager } from './scene-manager.js?v=2';
+import { ImageLoader } from './image-loader.js?v=2';
+import { UIController } from './ui-controller.js?v=2';
 
 class ARCharacterApp {
     constructor() {
