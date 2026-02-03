@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="Web AR Character Display - カメラ映像からAR平面を検出してキャラクターを表示">
+    <title>Web AR Character Display</title>
+    <link rel="stylesheet" href="style.css">
+    
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+</head>
+<body>
+    <!-- Loading Screen -->
+    <div id="loading-screen" class="loading-screen">
+        <div class="loading-content">
+            <div class="spinner"></div>
+            <p>Loading AR Experience...</p>
+        </div>
+    </div>
+
+    <!-- Main AR View -->
+    <div id="ar-container" class="ar-container">
+        <video id="camera-video" autoplay playsinline></video>
+        <canvas id="ar-canvas"></canvas>
+    </div>
+
+    <!-- UI Controls -->
+    <div id="ui-controls" class="ui-controls">
+        <!-- Top Bar -->
+        <div class="top-bar glass-panel">
+            <h1>AR Character Display</h1>
+            <button id="help-btn" class="icon-btn" aria-label="Help">
+                <span>?</span>
+            </button>
+        </div>
+
+        <!-- Character Selection -->
+        <div class="character-selection glass-panel">
+            <h3>キャラクター選択</h3>
+            <div class="character-grid">
+                <button class="character-btn active" data-character="character1">
+                    <img src="assets/characters/character1.png" alt="Character 1">
+                    <span>Character 1</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Control Panel -->
+        <div class="control-panel glass-panel">
+            <div class="control-group">
+                <label for="rotation-slider">回転</label>
+                <input type="range" id="rotation-slider" min="0" max="360" value="0" step="1">
+                <span id="rotation-value">0°</span>
+            </div>
+            
+            <div class="control-group">
+                <label for="scale-slider">スケール</label>
+                <input type="range" id="scale-slider" min="0.5" max="3" value="1" step="0.1">
+                <span id="scale-value">1.0x</span>
+            </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="action-buttons">
+            <button id="place-btn" class="primary-btn">
+                <span>📍</span> キャラクターを配置
+            </button>
+            <button id="clear-btn" class="secondary-btn">
+                <span>🗑️</span> クリア
+            </button>
+        </div>
+
+        <!-- Instructions -->
+        <div class="instructions glass-panel">
+            <p>📱 画面をタップしてキャラクターを配置</p>
+            <p>🔄 スライダーで回転・サイズ調整</p>
+        </div>
+    </div>
+
+    <!-- Help Modal -->
+    <div id="help-modal" class="modal hidden">
+        <div class="modal-content glass-panel">
+            <button id="close-modal" class="close-btn">&times;</button>
+            <h2>使い方</h2>
+            <ol>
+                <li>カメラへのアクセスを許可してください</li>
+                <li>キャラクターを選択します</li>
+                <li>画面をタップして配置位置を決定</li>
+                <li>スライダーで回転・サイズを調整</li>
+                <li>「キャラクターを配置」ボタンをタップ</li>
+            </ol>
+            <h3>動作環境</h3>
+            <ul>
+                <li>iOS Safari 11+</li>
+                <li>Android Chrome 67+</li>
+                <li>デスクトップ: Chrome, Edge (WebGL対応)</li>
+            </ul>
+            <p class="note">※ カメラアクセスにはHTTPS接続が必要です</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script type="module" src="scene-manager.js"></script>
+    <script type="module" src="image-loader.js"></script>
+    <script type="module" src="ar-manager.js"></script>
+    <script type="module" src="ui-controller.js"></script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
