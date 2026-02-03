@@ -12,6 +12,8 @@ export class SceneManager {
         this.reticle = null;
         this.hitTestSource = null;
         this.hitTestSourceRequested = false;
+        this.onReticleVisibilityChange = null;
+        this.isReticleVisible = false;
 
         this.init();
     }
@@ -147,6 +149,14 @@ export class SceneManager {
                     this.reticle.matrix.fromArray(pose.transform.matrix);
                 } else {
                     this.reticle.visible = false;
+                }
+
+                // 状態変化の通知
+                if (this.isReticleVisible !== this.reticle.visible) {
+                    this.isReticleVisible = this.reticle.visible;
+                    if (this.onReticleVisibilityChange) {
+                        this.onReticleVisibilityChange(this.isReticleVisible);
+                    }
                 }
             }
         }

@@ -1,76 +1,77 @@
-// UI Controller - ユーザーインターフェースの制御
+// UI Controller - DOM操作とイベントリスナー管理
 
 export class UIController {
     constructor() {
-        this.selectedCharacter = 'character1';
-        this.rotation = 0;
-        this.scale = 1.0;
-
-        this.initElements();
-        this.attachEventListeners();
-    }
-
-    initElements() {
         // Elements
-        this.helpBtn = document.getElementById('help-btn');
+        this.loadingScreen = document.getElementById('loading-screen');
         this.helpModal = document.getElementById('help-modal');
-        this.closeModal = document.getElementById('close-modal');
+        this.helpBtn = document.getElementById('help-btn');
+        this.closeHelpBtn = document.getElementById('close-help-btn');
         this.placeBtn = document.getElementById('place-btn');
         this.clearBtn = document.getElementById('clear-btn');
-        this.rotationSlider = document.getElementById('rotation-slider');
-        this.rotationValue = document.getElementById('rotation-value');
-        this.scaleSlider = document.getElementById('scale-slider');
-        this.scaleValue = document.getElementById('scale-value');
+        this.rotationSlider = document.getElementById('rotation');
+        this.scaleSlider = document.getElementById('scale');
+
+        // Character Selection
         this.characterBtns = document.querySelectorAll('.character-btn');
-        this.loadingScreen = document.getElementById('loading-screen');
+        this.selectedCharacter = 'character1'; // Default
+
+        // UI Toggle
+        this.toggleUiBtn = document.getElementById('toggle-ui-btn');
+
+        this.setupEventListeners();
+
+        // 初期状態: 配置ボタン無効
+        this.setPlaceButtonState(false);
     }
 
-    attachEventListeners() {
-        // Help modal
-        this.helpBtn.addEventListener('click', () => this.showHelp());
-        this.closeModal.addEventListener('click', () => this.hideHelp());
-        this.helpModal.addEventListener('click', (e) => {
-            if (e.target === this.helpModal) {
-                this.hideHelp();
-            }
-        });
-
-        // Rotation slider
-        this.rotationSlider.addEventListener('input', (e) => {
-            this.rotation = parseInt(e.target.value);
-            this.rotationValue.textContent = `${this.rotation}°`;
-        });
-
-        // Scale slider
-        this.scaleSlider.addEventListener('input', (e) => {
-            this.scale = parseFloat(e.target.value);
-            this.scaleValue.textContent = `${this.scale.toFixed(1)}x`;
-        });
-
-        // Character selection
+    setupEventListeners() {
+        // キャラクター選択
         this.characterBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
+            btn.addEventListener('click', (e) => {
+                // Remove active class from all
                 this.characterBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                this.selectedCharacter = btn.dataset.character;
+
+                // Add active to clicked (handle image click inside btn)
+                const target = e.target.closest('.character-btn');
+                target.classList.add('active');
+
+                this.selectedCharacter = target.dataset.char;
+                console.log('Selected:', this.selectedCharacter);
             });
         });
+
+        // ヘルプボタン
+        this.helpBtn.addEventListener('click', () => this.toggleHelp());
+        this.closeHelpBtn.addEventListener('click', () => this.toggleHelp());
+
+        // UI切り替えボタン (存在チェック)
+        if (this.toggleUiBtn) {
+            this.toggleUiBtn.addEventListener('click', () => this.toggleUI());
+        }
     }
 
-    showHelp() {
-        this.helpModal.classList.remove('hidden');
+    toggleUI() {
+        document.body.classList.toggle('ui-hidden');
+        const isHidden = document.body.classList.contains('ui-hidden');
+        if (this.toggleUiBtn) {
+            this.toggleUiBtn.style.opacity = isHidden ? '0.5' : '1';
+        }
     }
 
-    hideHelp() {
-        this.helpModal.classList.add('hidden');
-    }
-
-    hideLoading() {
-        this.loadingScreen.classList.add('hidden');
-    }
-
-    showLoading() {
-        this.loadingScreen.classList.remove('hidden');
+    // 配置ボタンの有効/無効化
+    setPlaceButtonState(enabled) {
+        if (enabled) {
+            this.placeBtn.disabled = false;
+            this.placeBtn.classList.remove('disabled');
+            this.placeBtn.style.opacity = '1';
+            this.placeBtn.querySelector('span').textContent = '📍 配置する';
+        } else {
+            this.placeBtn.disabled = true;
+            this.placeBtn.classList.add('disabled');
+            this.placeBtn.style.opacity = '0.5';
+            this.placeBtn.querySelector('span').textContent = '🔍 平面を探して...';
+        }
     }
 
     onPlaceClick(callback) {
@@ -81,23 +82,27 @@ export class UIController {
         this.clearBtn.addEventListener('click', callback);
     }
 
-    getSelectedCharacter() {
-        return this.selectedCharacter;
-    }
-
-    getRotation() {
-        return this.rotation;
-    }
-
-    getScale() {
-        return this.scale;
+    toggleHelp() {
+        this.helpModal.classList.toggle('hidden');
     }
 
     showError(message) {
         alert(message);
     }
 
-    showSuccess(message) {
-        console.log('Success:', message);
+    hideLoading() {
+        this.loadingScreen.classList.add('hidden');
+    }
+
+    getSelectedCharacter() {
+        return this.selectedCharacter;
+    }
+
+    getRotation() {
+        return parseFloat(this.rotationSlider.value);
+    }
+
+    getScale() {
+        return parseFloat(this.scaleSlider.value);
     }
 }

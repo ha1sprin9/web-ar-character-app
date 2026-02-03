@@ -126,9 +126,34 @@ body {
     z-index: 10;
     pointer-events: none;
     padding: var(--spacing-md);
+    padding-bottom: 80px;
+    /* ARButtonの上 */
     display: flex;
     flex-direction: column;
     gap: var(--spacing-sm);
+    transition: opacity 0.3s ease;
+}
+
+/* UI Hidden State */
+body.ui-hidden .ui-controls {
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.ui-hidden .top-bar {
+    background: transparent;
+    backdrop-filter: none;
+    border: none;
+    box-shadow: none;
+    pointer-events: none;
+}
+
+body.ui-hidden .top-bar h1 {
+    display: none;
+}
+
+body.ui-hidden #help-btn {
+    display: none;
 }
 
 .ui-controls>* {
@@ -144,12 +169,20 @@ body {
 }
 
 .top-bar h1 {
+    margin: 0;
     font-size: 1.25rem;
     font-weight: 700;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+}
+
+.top-buttons {
+    display: flex;
+    gap: 10px;
+    pointer-events: auto;
+    /* UI非表示時でもクリック可能に */
 }
 
 .icon-btn {
@@ -163,6 +196,9 @@ body {
     font-weight: bold;
     cursor: pointer;
     transition: all var(--transition-fast);
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .icon-btn:hover {
@@ -298,6 +334,17 @@ body {
     align-items: center;
     justify-content: center;
     gap: var(--spacing-xs);
+}
+
+/* Disabled State */
+.action-btn:disabled,
+.action-btn.disabled,
+.primary-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #666;
+    box-shadow: none;
+    transform: none !important;
 }
 
 .primary-btn {
