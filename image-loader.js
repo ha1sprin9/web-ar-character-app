@@ -47,7 +47,13 @@ export class ImageLoader {
         const sprite = new THREE.Sprite(material);
 
         // アスペクト比を維持してスケール設定
-        const aspect = texture.image.width / texture.image.height;
+        let aspect = 1;
+        if (texture.image && texture.image.width && texture.image.height) {
+            aspect = texture.image.width / texture.image.height;
+        } else {
+            console.warn('Texture image not fully loaded, using default aspect ratio 1:1');
+        }
+
         sprite.scale.set(scale * aspect, scale, 1);
 
         // ユーザーデータ
