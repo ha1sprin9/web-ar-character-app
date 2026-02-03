@@ -1,8 +1,8 @@
 // Main Application - すべてのモジュールを統合
 
-import { SceneManager } from './scene-manager.js?v=2';
-import { ImageLoader } from './image-loader.js?v=2';
-import { UIController } from './ui-controller.js?v=2';
+import { SceneManager } from './scene-manager.js?v=3';
+import { ImageLoader } from './image-loader.js?v=3';
+import { UIController } from './ui-controller.js?v=3';
 
 class ARCharacterApp {
     constructor() {
@@ -16,20 +16,36 @@ class ARCharacterApp {
 
     async init() {
         try {
+            console.log('App: Starting initialization...');
+
             // UI Controller初期化
             this.uiController = new UIController();
+            console.log('App: UI Controller initialized');
 
             // コンテナ取得
             const container = document.getElementById('ar-container');
+            if (!container) throw new Error('AR Container not found');
 
             // Scene Manager初期化 (WebXR対応)
             this.sceneManager = new SceneManager(container);
+            console.log('App: Scene Manager initialized');
+
+            // 平面検出状態の監視 (これが漏れていた修正)
+            if (this.sceneManager.setReticleVisibilityCallback) {
+                this.sceneManager.setReticleVisibilityCallback((visible) => {
+                    this.uiController.setPlaceButtonState(visible);
+                });
+            } else {
+                console.error('SceneManager.setReticleVisibilityCallback is missing!');
+            }
 
             // Image Loader初期化
             this.imageLoader = new ImageLoader();
+            console.log('App: Image Loader initialized');
 
             // イベントリスナー設定
             this.setupEventListeners();
+            console.log('App: Event listeners set up');
 
             // ローディング画面を非表示
             setTimeout(() => {
@@ -40,7 +56,11 @@ class ARCharacterApp {
 
         } catch (error) {
             console.error('Initialization error:', error);
-            this.uiController.showError(error.message);
+            // ユーザーに見えるアラートに変更
+            alert('App Init Error: ' + error.message);
+            if (this.uiController && this.uiController.showError) {
+                this.uiController.showError(error.message);
+            }
         }
     }
 
