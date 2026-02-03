@@ -1,15 +1,23 @@
 <!DOCTYPE html>
 <html lang="ja">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <meta name="description" content="Web AR Character Display - カメラ映像からAR平面を検出してキャラクターを表示">
     <title>Web AR Character Display</title>
     <link rel="stylesheet" href="style.css">
-    
-    <!-- Three.js -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r152/three.min.js"></script>
+
+    <!-- Import Map -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.152.0/build/three.module.js"
+            }
+        }
+    </script>
 </head>
+
 <body>
     <!-- Loading Screen -->
     <div id="loading-screen" class="loading-screen">
@@ -53,7 +61,7 @@
                 <input type="range" id="rotation-slider" min="0" max="360" value="0" step="1">
                 <span id="rotation-value">0°</span>
             </div>
-            
+
             <div class="control-group">
                 <label for="scale-slider">スケール</label>
                 <input type="range" id="scale-slider" min="0.5" max="3" value="1" step="0.1">
@@ -107,4 +115,5 @@
     <script type="module" src="ui-controller.js"></script>
     <script type="module" src="app.js"></script>
 </body>
+
 </html>

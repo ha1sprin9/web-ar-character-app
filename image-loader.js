@@ -1,4 +1,5 @@
 // Image Loader - PNG画像の読み込みとビルボードスプライト生成
+import * as THREE from 'three';
 
 export class ImageLoader {
     constructor() {
