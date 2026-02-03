@@ -6,11 +6,11 @@ export class UIController {
         this.loadingScreen = document.getElementById('loading-screen');
         this.helpModal = document.getElementById('help-modal');
         this.helpBtn = document.getElementById('help-btn');
-        this.closeHelpBtn = document.getElementById('close-help-btn');
+        this.closeHelpBtn = document.getElementById('close-modal'); // ID修正
         this.placeBtn = document.getElementById('place-btn');
         this.clearBtn = document.getElementById('clear-btn');
-        this.rotationSlider = document.getElementById('rotation');
-        this.scaleSlider = document.getElementById('scale');
+        this.rotationSlider = document.getElementById('rotation-slider'); // ID修正
+        this.scaleSlider = document.getElementById('scale-slider'); // ID修正
 
         // Character Selection
         this.characterBtns = document.querySelectorAll('.character-btn');
@@ -36,18 +36,36 @@ export class UIController {
                 const target = e.target.closest('.character-btn');
                 target.classList.add('active');
 
-                this.selectedCharacter = target.dataset.char;
+                this.selectedCharacter = target.dataset.character; // data-character -> data-character修正
                 console.log('Selected:', this.selectedCharacter);
             });
         });
 
         // ヘルプボタン
-        this.helpBtn.addEventListener('click', () => this.toggleHelp());
-        this.closeHelpBtn.addEventListener('click', () => this.toggleHelp());
+        if (this.helpBtn) {
+            this.helpBtn.addEventListener('click', () => this.toggleHelp());
+        }
+        if (this.closeHelpBtn) {
+            this.closeHelpBtn.addEventListener('click', () => this.toggleHelp());
+        }
 
-        // UI切り替えボタン (存在チェック)
+        // UI切り替えボタン
         if (this.toggleUiBtn) {
             this.toggleUiBtn.addEventListener('click', () => this.toggleUI());
+        }
+
+        // スライダーイベント (値表示更新用)
+        if (this.rotationSlider) {
+            this.rotationSlider.addEventListener('input', (e) => {
+                const val = document.getElementById('rotation-value');
+                if (val) val.textContent = `${e.target.value}°`;
+            });
+        }
+        if (this.scaleSlider) {
+            this.scaleSlider.addEventListener('input', (e) => {
+                const val = document.getElementById('scale-value');
+                if (val) val.textContent = `${e.target.value}x`;
+            });
         }
     }
 
@@ -61,29 +79,43 @@ export class UIController {
 
     // 配置ボタンの有効/無効化
     setPlaceButtonState(enabled) {
+        if (!this.placeBtn) return;
+
         if (enabled) {
             this.placeBtn.disabled = false;
             this.placeBtn.classList.remove('disabled');
             this.placeBtn.style.opacity = '1';
-            this.placeBtn.querySelector('span').textContent = '📍 配置する';
+            const span = this.placeBtn.querySelector('span');
+            if (span) span.textContent = '📍';
+            // テキストノードだけ置換するのは面倒なので、CSSで制御するか、簡易的に
+            // this.placeBtn.innerHTML = '<span>📍</span> 配置する'; 
+            // と書き換える手もあるが、イベントリスナーが消える可能性があるため
+            // テキストのみ変更する実装が望ましいが、ここでは簡易実装にとどめる
         } else {
             this.placeBtn.disabled = true;
             this.placeBtn.classList.add('disabled');
             this.placeBtn.style.opacity = '0.5';
-            this.placeBtn.querySelector('span').textContent = '🔍 平面を探して...';
+            const span = this.placeBtn.querySelector('span');
+            if (span) span.textContent = '🔍';
         }
     }
 
     onPlaceClick(callback) {
-        this.placeBtn.addEventListener('click', callback);
+        if (this.placeBtn) {
+            this.placeBtn.addEventListener('click', callback);
+        }
     }
 
     onClearClick(callback) {
-        this.clearBtn.addEventListener('click', callback);
+        if (this.clearBtn) {
+            this.clearBtn.addEventListener('click', callback);
+        }
     }
 
     toggleHelp() {
-        this.helpModal.classList.toggle('hidden');
+        if (this.helpModal) {
+            this.helpModal.classList.toggle('hidden');
+        }
     }
 
     showError(message) {
@@ -91,7 +123,9 @@ export class UIController {
     }
 
     hideLoading() {
-        this.loadingScreen.classList.add('hidden');
+        if (this.loadingScreen) {
+            this.loadingScreen.classList.add('hidden');
+        }
     }
 
     getSelectedCharacter() {
@@ -99,10 +133,10 @@ export class UIController {
     }
 
     getRotation() {
-        return parseFloat(this.rotationSlider.value);
+        return this.rotationSlider ? parseFloat(this.rotationSlider.value) : 0;
     }
 
     getScale() {
-        return parseFloat(this.scaleSlider.value);
+        return this.scaleSlider ? parseFloat(this.scaleSlider.value) : 1;
     }
 }
